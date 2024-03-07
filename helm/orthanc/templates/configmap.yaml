@@ -3,11 +3,6 @@ apiVersion: v1
 metadata:
   name: orthanc-dbinit
   namespace: {{ $.Release.Namespace | quote }}
-  labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
-    app.kubernetes.io/instance: {{ .Release.Name | quote }}
-    app.kubernetes.io/version: {{ .Chart.AppVersion }}
-    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 data:
   db_create.sql: |
     CREATE DATABASE orthancdb;
