@@ -14,8 +14,4 @@ metadata:
   namespace: {{ $.Release.Namespace | quote }}
 data:
   orthanc.json: | 
-    {{- $.Files.Get "orthanc.json" | nindent 4 }}
-  db.engine: "postgres"
-  db.port: "5432"
-  db.addr: "{{ $.Release.Name }}-postgresql-ha-pgpool.{{ $.Release.Namespace }}.svc.cluster.local"
-  db.user: postgres
+    {{ .Values.orthancJson | nindent 4 }}

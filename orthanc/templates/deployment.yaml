@@ -29,25 +29,25 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       initContainers:
-        - name: init-mydb
+        - name: await-mydb
           image: busybox
           command: ['sh','-c',"until nc -vz $DB_ADDR $DB_PORT; do echo waiting DB service at $DB_ADDR:$DB_PORT; sleep 3; done"]
           env:
             - name: DB_ADDR
               valueFrom:
-                configMapKeyRef:
-                  name: orthanc-app
-                  key: db.addr
+                secretKeyRef:
+                  name: {{ .Values.postgresSecret.database.name }}
+                  key: {{ .Values.postgresSecret.database.key }}
             - name: DB_PORT
               valueFrom:
-                configMapKeyRef:
-                  name: orthanc-app
-                  key: db.port
+                secretKeyRef:
+                  name: {{ .Values.postgresSecret.port.name }}
+                  key: {{ .Values.postgresSecret.port.key }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}@{{ .Values.image.digest }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           args: ["/run/secrets/"]
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
@@ -61,23 +61,28 @@ spec:
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{ $.Release.Name }}-postgresql-ha-postgresql"
-                  key: password
+                  name: {{ .Values.postgresSecret.password.name }}
+                  key: {{ .Values.postgresSecret.password.key }}
             - name: DB_USERNAME
               valueFrom:
-                configMapKeyRef:
-                  name: orthanc-app
-                  key: db.user
+                secretKeyRef:
+                  name: {{ .Values.postgresSecret.username.name }}
+                  key: {{ .Values.postgresSecret.username.key }}
+            - name: DB_DBNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresSecret.database.name }}
+                  key: {{ .Values.postgresSecret.database.key }}
             - name: DB_ADDR
               valueFrom:
-                configMapKeyRef:
-                  name: orthanc-app
-                  key: db.addr
+                secretKeyRef:
+                  name: {{ .Values.postgresSecret.address.name }}
+                  key: {{ .Values.postgresSecret.address.key }}
             - name: DB_PORT
               valueFrom:
-                configMapKeyRef:
-                  name: orthanc-app
-                  key: db.port
+                secretKeyRef:
+                  name: {{ .Values.postgresSecret.port.name }}
+                  key: {{ .Values.postgresSecret.port.key }}
           volumeMounts:
           - name: app-cm-vol
             mountPath: "/run/secrets/orthanc.json"

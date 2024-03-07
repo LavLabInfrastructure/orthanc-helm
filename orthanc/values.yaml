@@ -2,12 +2,12 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 3
+replicaCount: 1
 
 image:
   repository: osimis/orthanc 
   pullPolicy: Always 
-  digest: "sha256:13914140549da7bb10869a75f7a7fd4ecfdc92e146da2af4917d6b85170e1525" # digest for version 23.11.1
+  tag: "23.11.1" 
 
 imagePullSecrets: []
 nameOverride: ""
@@ -30,11 +30,11 @@ podSecurityContext:
     type: RuntimeDefault
 
 securityContext:
-  capabilities:
-    drop:
-    - ALL
-    add:
-    - DAC_OVERRIDE
+  capabilities: {}
+    # drop:
+    # - ALL
+    # add:
+    # - DAC_OVERRIDE
   allowPrivilegeEscalation: false
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
@@ -52,15 +52,15 @@ resources:
   # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
   limits:
     # cpu: 100m # Do not set CPU limit
-    memory: 128Mi
+    # memory: 128Mi
   requests:
     cpu: 100m
     memory: 128Mi
 
 autoscaling:
-  enabled: true
-  minReplicas: 3
-  maxReplicas: 10
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
   targetCPUUtilizationPercentage: 85
   targetMemoryUtilizationPercentage: 85
 
@@ -69,6 +69,26 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+postgresSecret:
+  address: 
+    name: 'pg-connection-secret'
+    key: 'address'
+  database: 
+    name: 'pg-connection-secret'
+    key: 'database'
+  username: 
+    name: 'pg-connection-secret'
+    key: 'username'
+  password: 
+    name: 'pg-connection-secret'
+    key: 'password'
+  server:
+    name: 'pg-connection-secret'
+    key: 'server'
+  port:
+    name: 'pg-connection-secret'
+    key: 'port'
 
 
 ## app configuration 
@@ -85,52 +105,33 @@ https:
   secretName: https-secret
   certCommonName: web.orthweb.com
 
-## PostgreSQL chart configuration
-## ref: https://github.com/bitnami/charts/blob/master/bitnami/postgresql-ha/values.yaml
-
-postgresql-ha:
-  enabled: true
-  volumePermissions:
-    enabled: true
-  postgresql:
-    initdbScriptsCM: orthanc-dbinit
-  pgpool:
-    tls:
-      enabled: true
-      certificatesSecret: dbtls-secret 
-      certFilename: tls.crt
-      certKeyFilename: tls.key
-      #certCAFilename: ca.crt # configuring this will require client to precent its cert for verification.
-  service:
-    portName: tcp-postgresql
-
-traefik:
-  enabled: true
-  deployment:
-    ingressRoute:
-      dashboard:
-        enabled: false
-  ports:
-    web:
-      expose: true
-      exposedPort: 80
-      protocol: TCP
-      port: 8080
-      redirectTo: 
-        port: websecure
-    websecure:
-      expose: true
-      exposedPort: 443
-      protocol: TCP
-      port: 8443
-      tls:
-        enabled: true
-    dicomtls:
-      expose: true
-      exposedPort: 11112
-      protocol: TCP
-      port: 4242
-      tls:
-        enabled: true
-  additionalArguments:
-    - "--log.level=DEBUG"
+# not recommended to modify PostgreSQL connection variables through here
+# connection variables are sourced through the secret(s) defined above in postgresSecret
+orthancJson: |
+  {  
+    "Name" : "Orthanc",
+    "RemoteAccessAllowed" : true,
+    "SslEnabled" : false,
+    "AuthenticationEnabled" : true,
+    "RegisteredUsers" : {
+      "admin" : "orthanc"
+    },
+    "DicomTlsEnabled" : false,
+    "DicomTlsRemoteCertificateRequired" : false,
+    "PostgreSQL" : {
+      "EnableIndex" : true,
+      "EnableStorage" : true,
+      "Host" : "${DB_ADDR}",
+      "Port" : "${DB_PORT}",
+      "Database" : "${DB_DBNAME}",
+      "Username" : "${DB_USERNAME}",
+      "Password" : "${DB_PASSWORD}",
+      "EnableSsl" : true,
+      "Lock" : false
+    },
+    "Plugins" : [
+      "/usr/share/orthanc/plugins-available/libOrthancPostgreSQLIndex.so",
+      "/usr/share/orthanc/plugins-available/libOrthancPostgreSQLStorage.so",
+      "/usr/share/orthanc/plugins-available/libOrthancWebViewer.so"
+    ]
+  }
