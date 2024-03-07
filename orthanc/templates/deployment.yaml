@@ -36,8 +36,8 @@ spec:
             - name: DB_ADDR
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.postgresSecret.database.name }}
-                  key: {{ .Values.postgresSecret.database.key }}
+                  name: {{ .Values.postgresSecret.address.name }}
+                  key: {{ .Values.postgresSecret.address.key }}
             - name: DB_PORT
               valueFrom:
                 secretKeyRef:
