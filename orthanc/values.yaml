@@ -87,20 +87,16 @@ postgresSecret:
     name: 'pg-connection-secret'
     key: 'port'
 
-
-## app configuration 
-catls:
-  secretName: ca-secret
-  caCommonName: ca.orthweb.com
-dbtls:
-  secretName: dbtls-secret
-  certCommonName: db.orthweb.com
-dcmtls:
-  secretName: dcmtls-secret
-  certCommonName: dicom.orthweb.com
-https:
-  secretName: https-secret
-  certCommonName: web.orthweb.com
+ingress:
+  enabled: true
+  className: ""
+  annotations: {}
+  hosts:
+    - host: orthanc.example.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
 
 # not recommended to modify PostgreSQL connection variables through here
 # connection variables are sourced through the secret(s) defined above in postgresSecret
