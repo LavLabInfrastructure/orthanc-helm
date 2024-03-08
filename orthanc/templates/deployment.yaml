@@ -28,21 +28,6 @@ spec:
       serviceAccountName: {{ include "orthanc.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      initContainers:
-        - name: await-mydb
-          image: busybox
-          command: ['sh','-c',"until nc -vz $DB_ADDR $DB_PORT; do echo waiting DB service at $DB_ADDR:$DB_PORT; sleep 3; done"]
-          env:
-            - name: DB_ADDR
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.postgresSecret.address.name }}
-                  key: {{ .Values.postgresSecret.address.key }}
-            - name: DB_PORT
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.postgresSecret.port.name }}
-                  key: {{ .Values.postgresSecret.port.key }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -58,31 +43,9 @@ spec:
               containerPort: {{ .Values.service.dicomPort }} 
               protocol: TCP
           env:
-            - name: DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.postgresSecret.password.name }}
-                  key: {{ .Values.postgresSecret.password.key }}
-            - name: DB_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.postgresSecret.username.name }}
-                  key: {{ .Values.postgresSecret.username.key }}
-            - name: DB_DBNAME
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.postgresSecret.database.name }}
-                  key: {{ .Values.postgresSecret.database.key }}
-            - name: DB_ADDR
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.postgresSecret.address.name }}
-                  key: {{ .Values.postgresSecret.address.key }}
-            - name: DB_PORT
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.postgresSecret.port.name }}
-                  key: {{ .Values.postgresSecret.port.key }}
+            {{- range .Values.env }}
+            - {{ . | toYaml}}
+            {{- end }}
           volumeMounts:
           - name: app-cm-vol
             mountPath: "/run/secrets/orthanc.json"
