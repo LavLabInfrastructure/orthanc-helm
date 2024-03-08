@@ -87,7 +87,7 @@ orthancJson: |
       "EnableIndex" : true,
       "EnableStorage" : true,
       "Host" : "${DB_ADDR}",
-      "Port" : "${DB_PORT}",
+      "Port" : ${DB_PORT},
       "Database" : "${DB_DBNAME}",
       "Username" : "${DB_USERNAME}",
       "Password" : "${DB_PASSWORD}",
