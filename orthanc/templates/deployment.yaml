@@ -42,10 +42,9 @@ spec:
             - name: dicom
               containerPort: {{ .Values.service.dicomPort }} 
               protocol: TCP
+          
           env:
-            {{- range .Values.env }}
-            - {{ . | toYaml}}
-            {{- end }}
+            {{- toYaml .Values.env | nindent 12 }}
           volumeMounts:
           - name: app-cm-vol
             mountPath: "/run/secrets/orthanc.json"
