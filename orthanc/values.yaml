@@ -5,9 +5,9 @@
 replicaCount: 1
 
 image:
-  repository: osimis/orthanc 
+  repository: orthancteam/orthanc
   pullPolicy: Always 
-  tag: "23.11.1" 
+  tag: "24.3.3" 
 
 imagePullSecrets: []
 nameOverride: ""
