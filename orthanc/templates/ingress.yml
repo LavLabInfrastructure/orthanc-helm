@@ -24,6 +24,8 @@ spec:
             backend:
               service:
                 name: {{ include "orthanc.fullname" $ }}
+                port:
+                  name: http
           {{- end }}
     {{- end }}
   {{- with .Values.ingress.tls }}
