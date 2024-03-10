@@ -71,6 +71,9 @@ env:
       secretKeyRef:
         name: pg-connection-secret
         key: 'password'
+        
+extraVolumes: []
+extraVolumeMounts: []
 
 orthancJson: |
   {  
