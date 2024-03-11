@@ -50,9 +50,9 @@ spec:
               mountPath: "/run/secrets/orthanc.json"
               subPath: "orthanc.json"
               readOnly: true
-            {{- range .Values.extraVolumeMounts }}
-            - {{ . | toYaml | nindent 12 }}
-            {{- end }}
+          {{- if .Values.extraVolumeMounts }}
+    {{ toYaml .Values.extraVolumeMounts | indent 12 }}
+          {{- end }}
           readinessProbe:
             httpGet:
               path: /app/explorer.html
@@ -87,10 +87,9 @@ spec:
         configMap:
           name: orthanc-app
           defaultMode: 0755
-      {{- range .Values.extraVolumes }}
-      - {{ . | toYaml | nindent 8 }}
-      {{- end }}
-      {{- with .Values.nodeSelector }}
+        {{- if .Values.extraVolumes }}
+{{ toYaml .Values.extraVolumes | indent 8}}
+        {{- end }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
