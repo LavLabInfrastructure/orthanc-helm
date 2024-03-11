@@ -51,7 +51,7 @@ spec:
               subPath: "orthanc.json"
               readOnly: true
           {{- if .Values.extraVolumeMounts }}
-    {{ toYaml .Values.extraVolumeMounts | indent 12 }}
+{{ toYaml .Values.extraVolumeMounts | indent 12 }}
           {{- end }}
           readinessProbe:
             httpGet:
@@ -88,7 +88,7 @@ spec:
           name: orthanc-app
           defaultMode: 0755
         {{- if .Values.extraVolumes }}
-{{ toYaml .Values.extraVolumes | indent 8}}
+{{ toYaml .Values.extraVolumes | indent 6}}
         {{- end }}
       {{- with .Values.affinity }}
       nodeSelector:
