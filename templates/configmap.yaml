@@ -13,5 +13,9 @@ metadata:
   name: orthanc-app
   namespace: {{ $.Release.Namespace | quote }}
 data:
+{{- if .Values.auth_service.enabled }}
+  permissions.json: |
+    {{ .Values.auth_service.permissionsJson | nindent 4 }}
+{{- end }}
   orthanc.json: | 
     {{ .Values.orthancJson | nindent 4 }}

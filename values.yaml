@@ -59,13 +59,25 @@ ingress:
 
 env:
   - name: DB_ADDR
-    value: "postgres-hostname"
+    valueFrom:
+      secretKeyRef:
+        name: pg-connection-secret
+        key: 'password'
   - name: DB_PORT
-    value: "5432"
+    valueFrom:
+      secretKeyRef:
+        name: pg-connection-secret
+        key: 'password'
   - name: DB_DBNAME
-    value: "orthanc"
+    valueFrom:
+      secretKeyRef:
+        name: pg-connection-secret
+        key: 'password'
   - name: DB_USERNAME
-    value: "orthanc_user"
+    valueFrom:
+      secretKeyRef:
+        name: pg-connection-secret
+        key: 'password'
   - name: DB_PASSWORD
     valueFrom:
       secretKeyRef:
@@ -103,3 +115,32 @@ orthancJson: |
       "/usr/share/orthanc/plugins-available/libOrthancWebViewer.so"
     ]
   }
+
+auth_service:
+  enabled: false
+
+  image:
+    repository: "orthancteam/orthanc-auth-service"
+    tag: "24.2.0"
+
+  env: []
+
+  extraVolumeMounts:
+    - name: extra-volume
+      mountPath: "/path/to/mount"
+      subPath: "subpath"
+      readOnly: true
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits: {}
+
+  permissionsJson: |
+    {
+      "roles" : {
+        "admin": ["all"],
+        "doctor": ["view", "download", "share", "send"]
+      }
+    }

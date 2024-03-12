@@ -29,7 +29,27 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: {{ .Chart.Name }}
+        {{- if .Values.auth_service.enabled }}
+        - name: orthanc-auth
+          image: "{{ .Values.auth_service.image.repository }}:{{ .Values.auth_service.image.tag }}"
+          ports:
+            - name: http-auth
+              containerPort: 8000
+              protocol: TCP
+          env:
+            {{- toYaml .Values.auth_service.env | nindent 12 }}
+          volumeMounts:
+            - name: app-cm-vol
+              mountPath: "/orthanc_auth_service/permissions.json"
+              subPath: "permissions.json"
+              readOnly: true
+          {{- if .Values.auth_service.extraVolumeMounts }}
+{{ toYaml .Values.auth_service.extraVolumeMounts | indent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.auth_service.resources | nindent 12 }}
+        {{- end }}
+        - name: orthanc
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
