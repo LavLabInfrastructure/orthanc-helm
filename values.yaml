@@ -125,12 +125,8 @@ auth_service:
 
   env: []
 
-  extraVolumeMounts:
-    - name: extra-volume
-      mountPath: "/path/to/mount"
-      subPath: "subpath"
-      readOnly: true
-
+  extraVolumeMounts: []
+  
   resources:
     requests:
       cpu: "100m"
