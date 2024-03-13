@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   repository: orthancteam/orthanc
   pullPolicy: Always
-  tag: "24.3.3"
+  tag: ""
 
 imagePullSecrets: []
 nameOverride: ""
@@ -136,7 +136,17 @@ auth_service:
   permissionsJson: |
     {
       "roles" : {
-        "admin": ["all"],
-        "doctor": ["view", "download", "share", "send"]
+        "admin-role": {
+          "permissions": ["all"],
+          "authorized_labels": ["*"]
+        },
+        "doctor-role": {
+          "permissions":["view", "download", "share", "send"],
+          "authorized_labels": ["*"]
+        },
+        "external-role": {
+          "permissions":["view", "download"],
+          "authorized_labels": ["external"]
+        }
       }
     }

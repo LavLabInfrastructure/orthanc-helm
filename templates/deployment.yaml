@@ -52,7 +52,7 @@ spec:
         - name: orthanc
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
           args: ["/run/secrets/"]
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:

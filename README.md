@@ -75,18 +75,120 @@ The following table lists the configurable parameters of the Orthanc chart and t
 | `auth_service.image.tag`            | Authentication service image tag          | `24.2.0`               |
 | `auth_service.env`                  | Environment variables for the authentication service | `[]`     |
 | `auth_service.resources`            | CPU/Memory resource requests/limits for the authentication service | `{}` |
-| `auth_service.permissionsJson`      | Permissions configuration for the authentication service | `{}`  |
+| `auth_service.permissionsJson`      | Permissions configuration for the authentication service | `{...}`  |
 
 For more detailed information about each parameter, refer to the Orthanc documentation and the `values.yaml` file.
 
 ## Auth Service Configuration
-This chart does not handle interconfigurations, meaning enabling auth_service will not make your orthanc instance start using it! You are expected to manually configure this in your orthancJson. 
+This chart does not handle interconfigurations, meaning enabling auth_service will not make your orthanc instance start using it! You are expected to manually configure this in your orthancJson. Please reference the [orthanc-auth-service documentation](https://orthanc.uclouvain.be/book/plugins/authorization.html) as well as their example deployments in their [repository](https://github.com/orthanc-team/orthanc-auth-service/tree/main).
 
-# TODO finish auth documentation after deployment
+Here's an example orthanc-auth-service configuration that uses an external keycloak instance that we assume is properly configured with an orthanc client:
+
+```yaml
+auth_service:
+  enabled: true
+  env:
+    - name: ENABLE_KEYCLOAK
+      value: 'true'
+    - name: KEYCLOAK_URI
+      value: https://keycloak.example/realms/your-realm
+    - name: KEYCLOAK_CLIENT_SECRET
+      value: asdfsecretkeystring
+    - name: PUBLIC_ORTHANC_ROOT
+      value: https://your.orthanc.url.local/
+    - name: PUBLIC_LANDING_ROOT
+      value: https://your.orthanc.url.local/ui/app/token-landing.html
+    - name: USERS
+      value: |
+        {
+          "share-user": "change-me"
+        }
+  # optionally define rbac, default is the admin, doctor, and external roles as defined in the auth service's example keycloak deployment
+  permissionsJson: |-
+    {
+      ...
+    }
+orthancJson: |
+
+  {  
+    "Name": "Orthanc",
+    "RemoteAccessAllowed": true,
+    "SslEnabled": false,
+    "AuthenticationEnabled": false,    
+    "Authorization": {
+      "WebServiceRootUrl": "http://localhost:8000/",
+      "WebServiceUsername": "share-user",
+      "WebServicePassword": "supersecretpassword",
+      "StandardConfigurations": [
+        "orthanc-explorer-2"
+      ],
+      "TokenHttpHeaders": [ "api-key" ],
+      "CheckedLevel": "studies"
+    },
+    "RegisteredUsers": {
+      "admin": "orthanc"
+    },
+    "DicomTlsEnabled": false,
+    "DicomTlsRemoteCertificateRequired": false,
+    "PostgreSQL": {
+      "EnableIndex": true,
+      "EnableStorage": true,
+      "Host": "${DB_ADDR}",
+      "Port": ${DB_PORT},
+      "Database": "${DB_DBNAME}",
+      "Username": "${DB_USERNAME}",
+      "Password": "${DB_PASSWORD}",
+      "EnableSsl": true,
+      "Lock": false
+    },
+    "DicomWeb": {
+      "Enable": true,                
+      "Root": "/dicom-web/",         
+      "EnableWado": true,            
+      "WadoRoot": "/wado",           
+      "Ssl": false,                   
+      "QidoCaseSensitive": true,     
+      "Host": "",                    
+      "StudiesMetadata": "Full",     
+      "SeriesMetadata": "Full",      
+      "EnableMetadataCache": true,    
+      "MetadataWorkerThreadsCount": 4,     
+      "PublicRoot": "/dicom-web/"    
+    },
+    "OHIF": {
+      "DataSource": "dicom-web"
+    },
+    "OrthancExplorer2": {
+      "Enable": true,
+      "IsDefaultOrthancUI": true,
+      "Tokens": {
+        "InstantLinksValidity": 3600,
+        "ShareType": "ohif-viewer-publication"
+      },
+      "Keycloak": {
+        "Enable": true,
+        "Url": "https://keycloak.example",
+        "Realm": "your-realm",
+        "ClientId": "orthanc"
+      }
+    },
+    "Plugins": [
+      "/usr/share/orthanc/plugins-available/libOrthancPostgreSQLIndex.so",
+      "/usr/share/orthanc/plugins-available/libOrthancPostgreSQLStorage.so",
+      "/usr/share/orthanc/plugins-available/libOrthancOHIF.so",
+      "/usr/share/orthanc/plugins-available/libOrthancDicomWeb.so",
+      "/usr/share/orthanc/plugins-available/libOrthancAuthorization.so",
+      "/usr/share/orthanc/plugins-available/libOrthancExplorer2.so"
+    ]
+  }
+```
+Properly configuring an OAuth client in Keycloak is beyond the scope of this tutorial.
+### Please note that orthancJson.Authorization.WebServiceRootUrl should always be http://localhost:8000 as this links it to the authservice container in the orthanc pod.
 
 ## Generic Plugin Configuration
-Auth Service provides a great example of configuring an orthanc plugin using orthanc helm, in our deployment we have configured postgres, object storage, python scripts, and all our other orthanc plugins using a combination of orthanc.json configs, volume mounts, and environmental variables. See [the list of plugins](https://orthanc.uclouvain.be/book/plugins.html) for more information. Here's an example configuration that is a simplified version of our deployment.
+In our deployment we have configured postgres, object storage, python scripts, and all our other orthanc plugins using a combination of orthanc.json configs, volume mounts, and environmental variables. See [the list of plugins](https://orthanc.uclouvain.be/book/plugins.html) for more information. 
 
+Here's an example configuration that is a simplified version of our deployment. It uses postgres indexing with s3 object storage backing, as well as the Explorer2 UI and OHIF viewer.
 ```yaml
 env:
   - name: DB_ADDR
@@ -151,62 +253,62 @@ extraVolumes:
       secretName: orthanc-aes-encryption-key
 orthancJson: |
   {  
-    "Name" : "Orthanc",
-    "RemoteAccessAllowed" : true,
-    "SslEnabled" : false,
-    "AuthenticationEnabled" : true,
-    "RegisteredUsers" : {
-      "admin" : "orthanc"
+    "Name": "Orthanc",
+    "RemoteAccessAllowed": true,
+    "SslEnabled": false,
+    "AuthenticationEnabled": true,
+    "RegisteredUsers": {
+      "admin": "orthanc"
     },
-    "DicomTlsEnabled" : false,
-    "DicomTlsRemoteCertificateRequired" : false,
-    "PostgreSQL" : {
-      "EnableIndex" : true,
-      "EnableStorage" : true,
-      "Host" : "${DB_ADDR}",
-      "Port" : ${DB_PORT},
-      "Database" : "${DB_DBNAME}",
-      "Username" : "${DB_USERNAME}",
-      "Password" : "${DB_PASSWORD}",
-      "EnableSsl" : true,
-      "Lock" : false
+    "DicomTlsEnabled": false,
+    "DicomTlsRemoteCertificateRequired": false,
+    "PostgreSQL": {
+      "EnableIndex": true,
+      "EnableStorage": true,
+      "Host": "${DB_ADDR}",
+      "Port": ${DB_PORT},
+      "Database": "${DB_DBNAME}",
+      "Username": "${DB_USERNAME}",
+      "Password": "${DB_PASSWORD}",
+      "EnableSsl": true,
+      "Lock": false
     },
-    "AwsS3Storage" : {
+    "AwsS3Storage": {
       "BucketName": "${BUCKET_NAME}",
-      "Region" : "${BUCKET_REGION}",
+      "Region": "${BUCKET_REGION}",
       "Endpoint": "http://${BUCKET_HOST}:${BUCKET_PORT}/",
       "AccessKey": "${AWS_ACCESS_KEY_ID}",
       "SecretKey": "${AWS_SECRET_ACCESS_KEY}",
-      "VirtualAddressing" : false,
-      "StorageEncryption" : {
+      "VirtualAddressing": false,
+      "StorageEncryption": {
         "Enable": true,
         "MasterKey": [1, "/var/s3-keys/aes1.key"], // key id - path to the base64 encoded key
-        "PreviousMasterKeys" : [],
-        "MaxConcurrentInputSize" : 1024   // size in MB
+        "PreviousMasterKeys": [],
+        "MaxConcurrentInputSize": 1024   // size in MB
       }
     },
-    "DicomWeb" : {
-      "Enable" : true,                
-      "Root" : "/dicom-web/",         
-      "EnableWado" : true,            
-      "WadoRoot" : "/wado",           
-      "Ssl" : false,                   
-      "QidoCaseSensitive" : true,     
-      "Host" : "",                    
-      "StudiesMetadata" : "Full",     
-      "SeriesMetadata" : "Full",      
+    "DicomWeb": {
+      "Enable": true,                
+      "Root": "/dicom-web/",         
+      "EnableWado": true,            
+      "WadoRoot": "/wado",           
+      "Ssl": false,                   
+      "QidoCaseSensitive": true,     
+      "Host": "",                    
+      "StudiesMetadata": "Full",     
+      "SeriesMetadata": "Full",      
       "EnableMetadataCache": true,    
       "MetadataWorkerThreadsCount": 4,     
       "PublicRoot": "/dicom-web/"    
     },
-    "OHIF" : {
-      "DataSource" : "dicom-web"
+    "OHIF": {
+      "DataSource": "dicom-web"
     },
-    "OrthancExplorer2" : {
+    "OrthancExplorer2": {
       "Enable": true,
       "IsDefaultOrthancUI": true
     },
-    "Plugins" : [
+    "Plugins": [
       "/usr/share/orthanc/plugins-available/libOrthancPostgreSQLIndex.so",
       "/usr/share/orthanc/plugins-available/libOrthancAwsS3Storage.so",
       "/usr/share/orthanc/plugins-available/libOrthancOHIF.so",
